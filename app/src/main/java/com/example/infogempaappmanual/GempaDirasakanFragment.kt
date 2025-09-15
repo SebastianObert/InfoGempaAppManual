@@ -5,55 +5,84 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONException
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+import com.example.infogempaappmanual.Gempa
+import com.example.infogempaappmanual.GempaAdapter
+import com.example.infogempaappmanual.R
 
-/**
- * A simple [Fragment] subclass.
- * Use the [GempaDirasakanFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class GempaDirasakanFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private val gempaDirasakanList = ArrayList<Gempa>()
+    private lateinit var gempaAdapter: GempaAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_gempa_dirasakan, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment GempaDirasakanFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            GempaDirasakanFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_gempa)
+        val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
+
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        gempaAdapter = GempaAdapter(gempaDirasakanList)
+        recyclerView.adapter = gempaAdapter
+
+        fetchData(progressBar)
+    }
+
+    private fun fetchData(progressBar: ProgressBar) {
+        progressBar.visibility = View.VISIBLE
+        val url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+
+        val request = JsonObjectRequest(Request.Method.GET, url, null,
+            { response ->
+                try {
+                    gempaDirasakanList.clear()
+
+                    // === PERBAIKAN UTAMA ADA DI SINI ===
+                    val gempaObject = response.getJSONObject("Infogempa").getJSONObject("gempa")
+                    val dirasakan = gempaObject.getString("Dirasakan")
+
+                    // Cek apakah gempa ini dirasakan atau tidak sebelum ditambahkan
+                    if (dirasakan != "tidak dirasakan") {
+                        gempaDirasakanList.add(
+                            Gempa(
+                                tanggal = gempaObject.getString("Tanggal"),
+                                jam = gempaObject.getString("Jam"),
+                                magnitudo = gempaObject.getString("Magnitude"),
+                                kedalaman = gempaObject.getString("Kedalaman"),
+                                wilayah = gempaObject.getString("Wilayah"),
+                                dirasakan = dirasakan
+                            )
+                        )
+                    }
+                    // ===================================
+
+                    gempaAdapter.notifyDataSetChanged()
+                    progressBar.visibility = View.GONE
+                } catch (e: JSONException) {
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-            }
+            },
+            { error ->
+                progressBar.visibility = View.GONE
+                Toast.makeText(context, "Gagal memuat data: ${error.message}", Toast.LENGTH_LONG).show()
+            })
+
+        Volley.newRequestQueue(requireContext()).add(request)
     }
 }

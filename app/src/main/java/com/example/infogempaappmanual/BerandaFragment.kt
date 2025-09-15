@@ -5,55 +5,88 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONException
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [BerandaFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class BerandaFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    // List untuk menyimpan data gempa yang akan ditampilkan
+    private val gempaList = ArrayList<Gempa>()
+    // Deklarasi adapter
+    private lateinit var gempaAdapter: GempaAdapter
 
+    // Metode ini hanya untuk membuat tampilan (layout) dari file XML
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_beranda, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment BerandaFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            BerandaFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    // Metode ini dipanggil setelah tampilan selesai dibuat. Di sinilah kita menaruh logika.
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // 1. Inisialisasi Views dari layout
+        val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_gempa)
+        val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
+
+        // 2. Setup RecyclerView
+        recyclerView.layoutManager = LinearLayoutManager(context) // Mengatur agar list tampil vertikal
+        gempaAdapter = GempaAdapter(gempaList) // Membuat instance adapter dengan list kosong
+        recyclerView.adapter = gempaAdapter // Menghubungkan adapter ke RecyclerView
+
+        // 3. Panggil metode untuk mengambil data dari internet
+        fetchData(progressBar)
+    }
+
+    private fun fetchData(progressBar: ProgressBar) {
+        progressBar.visibility = View.VISIBLE
+        val url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+
+        val request = JsonObjectRequest(Request.Method.GET, url, null,
+            { response ->
+                try {
+                    // Hapus data lama dari list
+                    gempaList.clear()
+
+                    // === PERBAIKAN UTAMA ADA DI SINI ===
+                    // Ambil "gempa" sebagai JSONObject, bukan JSONArray
+                    val gempaObject = response.getJSONObject("Infogempa").getJSONObject("gempa")
+
+                    // Tidak perlu loop, langsung tambahkan satu objek gempa ke list
+                    gempaList.add(
+                        Gempa(
+                            tanggal = gempaObject.getString("Tanggal"),
+                            jam = gempaObject.getString("Jam"),
+                            magnitudo = gempaObject.getString("Magnitude"),
+                            kedalaman = gempaObject.getString("Kedalaman"),
+                            wilayah = gempaObject.getString("Wilayah"),
+                            dirasakan = gempaObject.getString("Dirasakan")
+                        )
+                    )
+                    // ===================================
+
+                    gempaAdapter.notifyDataSetChanged()
+                    progressBar.visibility = View.GONE
+                } catch (e: JSONException) {
+                    progressBar.visibility = View.GONE
+                    // Tampilkan pesan error yang lebih detail untuk debugging
+                    Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-            }
+            },
+            { error ->
+                progressBar.visibility = View.GONE
+                Toast.makeText(context, "Gagal memuat data: ${error.message}", Toast.LENGTH_LONG).show()
+            })
+
+        Volley.newRequestQueue(requireContext()).add(request)
     }
 }
