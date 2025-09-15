@@ -49,36 +49,35 @@ class BerandaFragment : Fragment() {
 
     private fun fetchData(progressBar: ProgressBar) {
         progressBar.visibility = View.VISIBLE
-        val url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+        val url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
 
         val request = JsonObjectRequest(Request.Method.GET, url, null,
             { response ->
                 try {
-                    // Hapus data lama dari list
                     gempaList.clear()
+                    val gempaArray = response.getJSONObject("Infogempa").getJSONArray("gempa")
 
-                    // === PERBAIKAN UTAMA ADA DI SINI ===
-                    // Ambil "gempa" sebagai JSONObject, bukan JSONArray
-                    val gempaObject = response.getJSONObject("Infogempa").getJSONObject("gempa")
+                    for (i in 0 until gempaArray.length()) {
+                        val gempaObject = gempaArray.getJSONObject(i)
 
-                    // Tidak perlu loop, langsung tambahkan satu objek gempa ke list
-                    gempaList.add(
-                        Gempa(
-                            tanggal = gempaObject.getString("Tanggal"),
-                            jam = gempaObject.getString("Jam"),
-                            magnitudo = gempaObject.getString("Magnitude"),
-                            kedalaman = gempaObject.getString("Kedalaman"),
-                            wilayah = gempaObject.getString("Wilayah"),
-                            dirasakan = gempaObject.getString("Dirasakan")
+                        // Menggunakan .optString("key", "fallback") lebih aman daripada .getString("key")
+                        // Jika kunci tidak ada, ia akan mengembalikan nilai fallback ("-") daripada crash.
+                        gempaList.add(
+                            Gempa(
+                                tanggal = gempaObject.optString("Tanggal", "-"),
+                                jam = gempaObject.optString("Jam", "-"),
+                                magnitudo = gempaObject.optString("Magnitude", "-"),
+                                kedalaman = gempaObject.optString("Kedalaman", "-"),
+                                wilayah = gempaObject.optString("Wilayah", "-"),
+                                dirasakan = gempaObject.optString("Dirasakan", "-")
+                            )
                         )
-                    )
-                    // ===================================
+                    }
 
                     gempaAdapter.notifyDataSetChanged()
                     progressBar.visibility = View.GONE
                 } catch (e: JSONException) {
                     progressBar.visibility = View.GONE
-                    // Tampilkan pesan error yang lebih detail untuk debugging
                     Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             },

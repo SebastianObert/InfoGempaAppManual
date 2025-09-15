@@ -45,31 +45,35 @@ class GempaDirasakanFragment : Fragment() {
 
     private fun fetchData(progressBar: ProgressBar) {
         progressBar.visibility = View.VISIBLE
-        val url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+        val url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
 
         val request = JsonObjectRequest(Request.Method.GET, url, null,
             { response ->
                 try {
                     gempaDirasakanList.clear()
+                    val gempaArray = response.getJSONObject("Infogempa").getJSONArray("gempa")
 
-                    // === PERBAIKAN UTAMA ADA DI SINI ===
-                    val gempaObject = response.getJSONObject("Infogempa").getJSONObject("gempa")
-                    val dirasakan = gempaObject.getString("Dirasakan")
+                    for (i in 0 until gempaArray.length()) {
+                        val gempaObject = gempaArray.getJSONObject(i)
 
-                    // Cek apakah gempa ini dirasakan atau tidak sebelum ditambahkan
-                    if (dirasakan != "tidak dirasakan") {
-                        gempaDirasakanList.add(
-                            Gempa(
-                                tanggal = gempaObject.getString("Tanggal"),
-                                jam = gempaObject.getString("Jam"),
-                                magnitudo = gempaObject.getString("Magnitude"),
-                                kedalaman = gempaObject.getString("Kedalaman"),
-                                wilayah = gempaObject.getString("Wilayah"),
-                                dirasakan = dirasakan
+                        // Menggunakan .optString agar lebih aman
+                        val dirasakan = gempaObject.optString("Dirasakan", "tidak dirasakan")
+
+// Filter yang benar: Cek jika nilai BUKAN "tidak dirasakan".
+// Ini akan mencakup semua nilai seperti "II MMI", "III-IV MMI", dll.
+                        if (dirasakan != "tidak dirasakan") {
+                            gempaDirasakanList.add(
+                                Gempa(
+                                    tanggal = gempaObject.optString("Tanggal", "-"),
+                                    jam = gempaObject.optString("Jam", "-"),
+                                    magnitudo = gempaObject.optString("Magnitude", "-"),
+                                    kedalaman = gempaObject.optString("Kedalaman", "-"),
+                                    wilayah = gempaObject.optString("Wilayah", "-"),
+                                    dirasakan = dirasakan
+                                )
                             )
-                        )
+                        }
                     }
-                    // ===================================
 
                     gempaAdapter.notifyDataSetChanged()
                     progressBar.visibility = View.GONE
