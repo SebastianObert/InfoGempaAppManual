@@ -1,17 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
-            android:icon="@android:drawable/ic_menu_myplaces"
-            android:title="Beranda" />
+            android:icon="@drawable/ic_home"
+        android:title="Beranda" />
         <item
             android:id="@+id/nav_felt_earthquake"
-            android:icon="@android:drawable/ic_menu_view"
-            android:title="Gempa Dirasakan" />
+            android:icon="@drawable/ic_vibration"
+        android:title="Gempa Dirasakan" />
         <item
             android:id="@+id/nav_about"
-            android:icon="@android:drawable/ic_menu_info_details"
-            android:title="Tentang Aplikasi" />
+            android:icon="@drawable/ic_info"
+        android:title="Tentang Aplikasi" />
     </group>
 </menu>
