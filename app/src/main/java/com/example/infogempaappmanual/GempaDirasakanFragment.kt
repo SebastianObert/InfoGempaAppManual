@@ -15,9 +15,6 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import org.json.JSONException
 
-import com.example.infogempaappmanual.Gempa
-import com.example.infogempaappmanual.GempaAdapter
-import com.example.infogempaappmanual.R
 
 class GempaDirasakanFragment : Fragment() {
 
@@ -51,7 +48,6 @@ class GempaDirasakanFragment : Fragment() {
         val tvEmptyMessage: TextView = view.findViewById(R.id.tv_empty_message)
 
         tvEmptyMessage.text = "Tidak ada data gempa signifikan (M ≥ 5.0) saat ini."
-
         progressBar.visibility = View.VISIBLE
         tvEmptyMessage.visibility = View.GONE
         val url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
@@ -59,25 +55,32 @@ class GempaDirasakanFragment : Fragment() {
         val request = JsonObjectRequest(Request.Method.GET, url, null,
             { response ->
                 try {
-                    gempaDirasakanList.clear() // Kita masih menggunakan list yang sama
-                    val gempaArray = response.getJSONObject("Infogempa").getJSONArray("gempa")
+                    gempaDirasakanList.clear()
 
-                    for (i in 0 until gempaArray.length()) {
-                        val gempaObject = gempaArray.getJSONObject(i)
+                    val infogempaObject = response.optJSONObject("Infogempa")
 
-                        val magnitudo = gempaObject.optDouble("Magnitude", 0.0)
+                    if (infogempaObject != null) {
+                        val gempaArray = infogempaObject.optJSONArray("gempa")
 
-                        if (magnitudo >= 5.0) {
-                            gempaDirasakanList.add(
-                                Gempa(
-                                    tanggal = gempaObject.optString("Tanggal", "-"),
-                                    jam = gempaObject.optString("Jam", "-"),
-                                    magnitudo = gempaObject.optString("Magnitude", "-"),
-                                    kedalaman = gempaObject.optString("Kedalaman", "-"),
-                                    wilayah = gempaObject.optString("Wilayah", "-"),
-                                    dirasakan = gempaObject.optString("Dirasakan", "-")
-                                )
-                            )
+                        if (gempaArray != null) {
+                            for (i in 0 until gempaArray.length()) {
+                                val gempaObject = gempaArray.getJSONObject(i)
+
+                                val magnitudo = gempaObject.optDouble("Magnitude", 0.0)
+
+                                if (magnitudo >= 5.0) {
+                                    gempaDirasakanList.add(
+                                        Gempa(
+                                            tanggal = gempaObject.optString("Tanggal", "-"),
+                                            jam = gempaObject.optString("Jam", "-"),
+                                            magnitudo = gempaObject.optString("Magnitude", "-"),
+                                            kedalaman = gempaObject.optString("Kedalaman", "-"),
+                                            wilayah = gempaObject.optString("Wilayah", "-"),
+                                            dirasakan = gempaObject.optString("Dirasakan", "-")
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -92,7 +95,7 @@ class GempaDirasakanFragment : Fragment() {
 
                 } catch (e: JSONException) {
                     progressBar.visibility = View.GONE
-                    Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Terjadi kesalahan parsing: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             },
             { error ->
