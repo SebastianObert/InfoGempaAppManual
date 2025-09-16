@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,32 +37,37 @@ class GempaDirasakanFragment : Fragment() {
         val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_gempa)
         val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
 
+        recyclerView.isNestedScrollingEnabled = false
+
         recyclerView.layoutManager = LinearLayoutManager(context)
         gempaAdapter = GempaAdapter(gempaDirasakanList)
         recyclerView.adapter = gempaAdapter
 
-        fetchData(progressBar)
+        fetchData(view)
     }
 
-    private fun fetchData(progressBar: ProgressBar) {
+    private fun fetchData(view: View) {
+        val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
+        val tvEmptyMessage: TextView = view.findViewById(R.id.tv_empty_message)
+
+        tvEmptyMessage.text = "Tidak ada data gempa signifikan (M ≥ 5.0) saat ini."
+
         progressBar.visibility = View.VISIBLE
+        tvEmptyMessage.visibility = View.GONE
         val url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
 
         val request = JsonObjectRequest(Request.Method.GET, url, null,
             { response ->
                 try {
-                    gempaDirasakanList.clear()
+                    gempaDirasakanList.clear() // Kita masih menggunakan list yang sama
                     val gempaArray = response.getJSONObject("Infogempa").getJSONArray("gempa")
 
                     for (i in 0 until gempaArray.length()) {
                         val gempaObject = gempaArray.getJSONObject(i)
 
-                        // Menggunakan .optString agar lebih aman
-                        val dirasakan = gempaObject.optString("Dirasakan", "tidak dirasakan")
+                        val magnitudo = gempaObject.optDouble("Magnitude", 0.0)
 
-// Filter yang benar: Cek jika nilai BUKAN "tidak dirasakan".
-// Ini akan mencakup semua nilai seperti "II MMI", "III-IV MMI", dll.
-                        if (dirasakan != "tidak dirasakan") {
+                        if (magnitudo >= 5.0) {
                             gempaDirasakanList.add(
                                 Gempa(
                                     tanggal = gempaObject.optString("Tanggal", "-"),
@@ -69,7 +75,7 @@ class GempaDirasakanFragment : Fragment() {
                                     magnitudo = gempaObject.optString("Magnitude", "-"),
                                     kedalaman = gempaObject.optString("Kedalaman", "-"),
                                     wilayah = gempaObject.optString("Wilayah", "-"),
-                                    dirasakan = dirasakan
+                                    dirasakan = gempaObject.optString("Dirasakan", "-")
                                 )
                             )
                         }
@@ -77,6 +83,13 @@ class GempaDirasakanFragment : Fragment() {
 
                     gempaAdapter.notifyDataSetChanged()
                     progressBar.visibility = View.GONE
+
+                    if (gempaDirasakanList.isEmpty()) {
+                        tvEmptyMessage.visibility = View.VISIBLE
+                    } else {
+                        tvEmptyMessage.visibility = View.GONE
+                    }
+
                 } catch (e: JSONException) {
                     progressBar.visibility = View.GONE
                     Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()

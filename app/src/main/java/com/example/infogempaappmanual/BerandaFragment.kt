@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,12 +18,9 @@ import org.json.JSONException
 
 class BerandaFragment : Fragment() {
 
-    // List untuk menyimpan data gempa yang akan ditampilkan
     private val gempaList = ArrayList<Gempa>()
-    // Deklarasi adapter
     private lateinit var gempaAdapter: GempaAdapter
 
-    // Metode ini hanya untuk membuat tampilan (layout) dari file XML
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -30,24 +28,28 @@ class BerandaFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_beranda, container, false)
     }
 
-    // Metode ini dipanggil setelah tampilan selesai dibuat. Di sinilah kita menaruh logika.
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Inisialisasi Views dari layout
+        // Setup RecyclerView
         val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_gempa)
-        val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.isNestedScrollingEnabled = false // Penting untuk NestedScrollView
+        gempaAdapter = GempaAdapter(gempaList)
+        recyclerView.adapter = gempaAdapter
 
-        // 2. Setup RecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(context) // Mengatur agar list tampil vertikal
-        gempaAdapter = GempaAdapter(gempaList) // Membuat instance adapter dengan list kosong
-        recyclerView.adapter = gempaAdapter // Menghubungkan adapter ke RecyclerView
-
-        // 3. Panggil metode untuk mengambil data dari internet
-        fetchData(progressBar)
+        fetchData(view)
     }
 
-    private fun fetchData(progressBar: ProgressBar) {
+    private fun fetchData(view: View) {
+        // Inisialisasi semua elemen UI dari Dashboard di sini
+        val progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
+        val tvHighlightWilayah: TextView = view.findViewById(R.id.tv_highlight_wilayah)
+        val tvHighlightMagnitudo: TextView = view.findViewById(R.id.tv_highlight_magnitudo)
+        val tvHighlightWaktu: TextView = view.findViewById(R.id.tv_highlight_waktu)
+        val tvStatsTotal: TextView = view.findViewById(R.id.tv_stats_total)
+        val tvStatsTerbesar: TextView = view.findViewById(R.id.tv_stats_terbesar)
+
         progressBar.visibility = View.VISIBLE
         val url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
 
@@ -59,9 +61,6 @@ class BerandaFragment : Fragment() {
 
                     for (i in 0 until gempaArray.length()) {
                         val gempaObject = gempaArray.getJSONObject(i)
-
-                        // Menggunakan .optString("key", "fallback") lebih aman daripada .getString("key")
-                        // Jika kunci tidak ada, ia akan mengembalikan nilai fallback ("-") daripada crash.
                         gempaList.add(
                             Gempa(
                                 tanggal = gempaObject.optString("Tanggal", "-"),
@@ -74,8 +73,23 @@ class BerandaFragment : Fragment() {
                         )
                     }
 
+                    // MENGISI DATA KE DASHBOARD
+
+                    val gempaTerbaru = gempaList.firstOrNull()
+                    if (gempaTerbaru != null) {
+                        tvHighlightWilayah.text = gempaTerbaru.wilayah
+                        tvHighlightMagnitudo.text = "M ${gempaTerbaru.magnitudo}"
+                        tvHighlightWaktu.text = "${gempaTerbaru.tanggal} | ${gempaTerbaru.jam}"
+                    }
+
+                    tvStatsTotal.text = gempaList.size.toString()
+                    val magnitudoTerbesar = gempaList.maxByOrNull { it.magnitudo.toDoubleOrNull() ?: 0.0 }
+                    tvStatsTerbesar.text = magnitudoTerbesar?.magnitudo ?: "-"
+
+                    // Mengisi Daftar RecyclerView
                     gempaAdapter.notifyDataSetChanged()
                     progressBar.visibility = View.GONE
+
                 } catch (e: JSONException) {
                     progressBar.visibility = View.GONE
                     Toast.makeText(context, "Gagal mem-parsing data: ${e.message}", Toast.LENGTH_LONG).show()

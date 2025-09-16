@@ -7,7 +7,7 @@
         <item
             android:id="@+id/nav_felt_earthquake"
             android:icon="@drawable/ic_vibration"
-        android:title="Gempa Dirasakan" />
+            android:title="Gempa Signifikan (M ≥ 5.0)" />
         <item
             android:id="@+id/nav_about"
             android:icon="@drawable/ic_info"

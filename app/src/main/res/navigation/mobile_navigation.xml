@@ -16,8 +16,10 @@
     <fragment
         android:id="@+id/nav_felt_earthquake"
         android:name="com.example.infogempaappmanual.GempaDirasakanFragment"
-        android:label="Gempa Dirasakan"
-        tools:layout="@layout/fragment_gempa_dirasakan" />
+
+    android:label="Gempa Signifikan (M ≥ 5.0)"
+
+    tools:layout="@layout/fragment_gempa_dirasakan" />
 
     <!-- Destinasi untuk TentangFragment -->
     <fragment

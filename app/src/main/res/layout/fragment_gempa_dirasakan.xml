@@ -1,17 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".GempaDirasakanFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_gempa"
+    <!-- 1. Wrapper untuk Scrolling -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingVertical="4dp"/>
+        android:fillViewport="true">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_gempa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+        android:paddingVertical="4dp" />
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- 2. Pesan untuk ditampilkan jika data kosong -->
+    <TextView
+        android:id="@+id/tv_empty_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="16dp"
+        android:text="Tidak ada data gempa yang dilaporkan dirasakan saat ini."
+        android:textAlignment="center"
+        android:textSize="16sp"
+        android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"/>
+        android:visibility="gone" />
+
 </FrameLayout>
