@@ -28,4 +28,10 @@
         android:label="Tentang Aplikasi"
         tools:layout="@layout/fragment_tentang" />
 
+    <fragment
+        android:id="@+id/contoh1"
+        android:name="com.example.infogempaappmanual.contoh1"
+        android:label="contoh1"
+        tools:layout="@layout/fragment_contoh1" />
+
 </navigation>

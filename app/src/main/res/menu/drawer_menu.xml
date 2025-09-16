@@ -12,5 +12,9 @@
             android:id="@+id/nav_about"
             android:icon="@drawable/ic_info"
         android:title="Tentang Aplikasi" />
+        <item
+            android:id="@+id/contoh1"
+            android:icon="@drawable/ic_info"
+            android:title="Tentang Aplikasi" />
     </group>
 </menu>
